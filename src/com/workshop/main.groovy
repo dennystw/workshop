@@ -2,16 +2,48 @@
 package com.workshop
 
 import com.workshop.Config
-// import com.workshop.stages.*
+import com.workshop.stages.*
 
 def main(script) {
     // Object initialization
+    c = new Config()
+    sprebuild = new prebuild()
+
+    // Mandatoory variable
+    def repository_name = ("${script.env.repository_name}" != "null") ? "${script.env.repository_name}" : ""
+    def branch_name = ("${script.env.branch_name}" != "null") ? "${script.env.branch_name}" : ""
+    def git_user = ("${script.env.git_user}" != "null") ? "${script.env.git_user}" : ""
+    def docker_user = ("${script.env.docker_user}" != "null") ? "${script.env.docker_user}" : ""
+    def app_port = ("${script.env.app_port}" != "null") ? "${script.env.app_port}" : ""
+    def pr_num = ("${script.env.pr_num}" != "null") ? "${script.env.pr_num}" : ""
+
+    // Timeout for Healtcheck
+    def timeout_hc = (script.env.timeout_hc != "null") ? script.env.timeout_hc : 10
+
+    def dockerTool = tool name: 'docker', type: 'dockerTool'
 
     // Pipeline object
+    p = new Pipeline(
+        repository_name,
+        branch_name,
+        git_user,
+        docker_user,
+        app_port,
+        pr_num,
+        dockerTool
+    )
+
 
     ansiColor('xterm') {
-        stage('Test stage') {
-            println "Hello!"
+        // stage('Test stage') {
+        //     println "Hello!"
+        // }
+        stage('Pre Build - Details') {
+            sprebuild.validation(p)
+            sprebuild.details(p)
+        }
+        stage('Pre Build - Checkout & Test') {
+            sprebuild.checkoutBuildTest(p)
         }
     }
 }
